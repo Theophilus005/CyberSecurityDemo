@@ -10,9 +10,44 @@ However, the exploit was not successful. Despite trying multiple payload offsets
 
 
 ## Step 1: Creating a Vulnerable Program
-I wrote a simple C program with a function that uses the unsafe gets() function to read user input into a local buffer. This introduced a buffer overflow vulnerability, as gets() does not check the length of the input.
+I wrote a simple C program (vuln.c) with a function that uses the unsafe gets() function to read user input into a local buffer. This introduced a buffer overflow vulnerability, as gets() does not check the length of the input.
 
-**Markdown** is a system-independent markup language that is easier to learn and use than **HTML**.
+```
+/*  vuln.c  ── deliberately unsafe  */
+#include <stdio.h>
+
+/* gets() was removed from modern headers; declare it manually */
+char *gets(char *);
+
+void vulnerable_function() {
+    char buffer[100];
+    printf("Enter input: ");
+    gets(buffer); 
+    printf("You entered: %s\n", buffer);
+}
+
+int main() {
+    vulnerable_function();
+    return 0;
+}
+```
+
+## Step 2: Compiling the Program Without Protections
+To make the buffer overflow exploit possible, I compiled the code with the following security protections disabled:
+
+1. Stack canary: disabled using -fno-stack-protector
+
+2. Non-executable stack: disabled using -z execstack
+
+3. ASLR-friendly PIE (Position Independent Executable): disabled using -no-pie
+
+4. 32-bit architecture: enabled with -m32 (as it simplifies address prediction)
+
+```
+gcc -fno-stack-protector -z execstack -no-pie -m32 vuln.c -o vuln
+```
+
+
 
 ![Figure 1: The Markdown Mark](images/markdown-red.png)
 
