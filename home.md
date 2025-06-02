@@ -16,6 +16,7 @@ The demonstration was carried out on Ubuntu MATE 25.04 "Plucky Puffin" (64-bit) 
 sudo apt install gcc-multilib
 sudo apt install gdb
 sudo apt install python3
+sudo apt install execstack
 ```
 
 gcc-multilib: for compiling 32-bit C programs
@@ -23,6 +24,8 @@ gcc-multilib: for compiling 32-bit C programs
 gdb: GNU Debugger, used to inspect stack memory and find return address offsets
 
 python3: to generate and save the malicious payload into a file 
+
+execstack: makes the stack executable (required for running shellcode from stack)
 
 Here are the steps that was carried out:
 
@@ -61,7 +64,8 @@ To make the buffer overflow exploit possible, I compiled the code with the follo
 4. 32-bit architecture: enabled with -m32 (as it simplifies address prediction)
 
 ```
-gcc -fno-stack-protector -z execstack -no-pie -m32 vuln.c -o vuln
+gcc -m32 -fno-stack-protector -z execstack -no-pie vuln.c -o vuln
+
 ```
 
 ## Step 3: Writing the Exploit Payload
