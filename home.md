@@ -158,6 +158,11 @@ Instead of launching a shell, the program crashed with a segmentation fault. Des
 
 Seg error pic here
 
+)
+
+## Acknowledgement 
+ChatGPT was used to obtain step-by-step procedures, technical explanations, and code examples relevant to buffer overflow exploitation.
+
 
 ![Figure 1: The Markdown Mark](images/markdown-red.png)
 
