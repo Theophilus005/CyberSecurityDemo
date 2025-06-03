@@ -40,7 +40,7 @@ I wrote a simple C program (vuln.c) with a function that uses the unsafe gets() 
 char *gets(char *);
 
 void vulnerable_function() {
-    char buffer[100];
+    char buffer[64];
     printf("Enter input: ");
     gets(buffer); 
     printf("You entered: %s\n", buffer);
