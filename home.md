@@ -12,6 +12,15 @@ However, the exploit was not successful. Despite trying multiple payload offsets
 
 ___
 
+## Threat Model
+For this attack to be feasible, the attacker must possess the following capabilities:
+
+ 1. The attacker has access to the source code of the vulnerable program on their local machine and identifies a buffer overflow vulnerability.
+
+ 2. The attacker has developed an exploit for the vulnerability with the goal of injecting and executing custom shellcode to launch a shell.
+
+___
+
 ## Environment Setup
 The demonstration was carried out on Ubuntu MATE 25.04 "Plucky Puffin" (64-bit) with the following packages installed:
 
@@ -66,7 +75,32 @@ gcc -m32 -fno-stack-protector -z execstack -no-pie vuln.c -o vuln
 ```
 ___
 
-## Step 3: Writing the Exploit Payload
+## Step 3: Finding the Offset and ESP Location with GDB
+To understand the memory layout and determine where to inject my shellcode, I used GDB (GNU Debugger) to inspect the stack at runtime.
+
+I set a breakpoint at the gets() function, which is where the vulnerable buffer resides:
+```
+gdb ./vuln
+(gdb) break gets
+(gdb) run
+```
+
+Once the program hit the breakpoint, I used the following command to inspect the stack pointer (ESP) and view the contents of the stack:
+```
+(gdb) info registers esp
+(gdb) x/80x $esp
+```
+
+![gdbImage](images/gdbpic.png)
+
+This allowed me to identify where the return address was located in relation to the buffer. From this, I calculated how many bytes I needed to overflow the buffer and reach the return address. This offset was found to be 76 bytes in my case. I used 76 bytes in total because the buffer was 64 bytes, plus 4 bytes for the saved base pointer (EBP), and 4 bytes to overwrite the return address, with an extra 4 bytes as padding to ensure proper alignment—making it a total of 76 bytes.
+
+The goal was to overwrite the return address with the address pointing to the start of my shellcode in the stack. I approximated this address based on the output of info registers esp, often slightly increasing it to point just past the NOP sled and into the shellcode.
+
+___
+
+
+## Step 4: Writing the Exploit Payload
 I generated a Python script (exploit.py) to generate a payload containing:
 
 A sequence of NOP (\x90) instructions and a shellcode to execute /bin/sh. The purpose of the NOP sled is to increase the chance of successful redirection so that if the return address lands anywhere in the NOP sled, the processor will “slide” down the NOPs until it reaches the shellcode.
@@ -108,18 +142,7 @@ python3 exploit.py
 ```
 This creates a file named payload, which can then be passed as input to the vulnerable program.
 
-___
-
-## Step 4: Finding the Offset and ESP Location with GDB
-I ran the compiled program in gdb and set breakpoints to pause execution before the return. Using info registers and x/32x $esp, I inspected the stack to estimate the correct memory location where the shellcode would be placed.
-```
-gdb ./vuln
-(gdb) break gets
-(gdb) run
-(gdb) info registers esp
-(gdb) x/32x $esp
-```
-I used the output to guess a return address that would point into the NOP sled or shellcode.
+![dirImg](images/dir.png)
 
 ___
 
@@ -132,11 +155,16 @@ I passed the payload to the vulnerable program using input redirection:
 
 ___
 
-## Step 7: Observing the Result
-After running the exploit, the program crashed with a segmentation fault instead of launching a shell. I had placed my shellcode in the input along with a NOP sled to increase the chances of hitting it. I also inspected the stack using gdb to find a return address that pointed somewhere into the NOP sled. However, the program still crashed. This suggests that the return address I used didn’t correctly point to the shellcode in memory. It’s likely that the offset or the stack address changed at runtime, making it unreliable. Since stack addresses can vary and are sometimes affected by protections like ASLR (even if partially disabled), the shellcode wasn't reached and executed.
+## Step 6: Observing the Result
+After running the exploit, the program crashed with a segmentation fault instead of launching a shell. I had placed my shellcode in the input along with a NOP sled to increase the chances of hitting it. I also inspected the stack using gdb to find a return address that pointed somewhere into the NOP sled. However, the program still crashed. This suggests that the return address I used didn’t correctly point to the shellcode in memory. 
 
 ![Figure 1: The Markdown Mark](images/result.png)
-)
+
+During the exploitation phase, after placing a breakpoint at gets() using GDB, I checked the value of the stack pointer (ESP) using the command info registers esp. The value returned was **0xffffceb4** (step 3), which indicated where the buffer began in memory.
+
+To determine the correct return address for redirecting execution to the shellcode, I inspected the stack using x/80x $esp and manually analyzed several memory addresses. Among the addresses I tried were **0xffffceb4**, **0xffffce84**, **0xffffce64**, and **0xffffce34**. Each of these addresses pointed to different parts of the stack where the NOP sled or shellcode might reside. Despite multiple attempts and address adjustments, each payload resulted in a segmentation fault, suggesting that the return address did not accurately point to the shellcode location.
+
+It is likely that the offset or the stack address changed at runtime, making it unreliable. Since stack addresses can vary and are sometimes affected by protections like ASLR and stack canaries (even if partially disabled), the shellcode wasn't reached and executed.
 
 ___
 
