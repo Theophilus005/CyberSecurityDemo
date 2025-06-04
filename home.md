@@ -22,7 +22,7 @@ For this attack to be feasible, the attacker must possess the following capabili
 ___
 
 ## Environment Setup
-The demonstration was carried out on Ubuntu MATE 25.04 "Plucky Puffin" (64-bit) with the following packages installed:
+The demonstration was carried out natively on Ubuntu MATE 25.04 "Plucky Puffin" (64-bit) with the following packages installed:
 
 ```
 sudo apt install gcc-multilib   //for compiling 32-bit C programs
@@ -56,6 +56,9 @@ int main() {
     return 0;
 }
 ```
+
+![VulnExecImg](images/vulnExec.png)
+
 ___
 
 ## Step 2: Compiling the Program Without Protections
