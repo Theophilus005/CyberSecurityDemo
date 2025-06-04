@@ -145,7 +145,7 @@ python3 exploit.py
 ```
 This creates a file named payload, which can then be passed as input to the vulnerable program.
 
-![dirImg](images/dir.png)
+![dirImg](images/dirImg.png)
 
 ___
 
