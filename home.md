@@ -6,7 +6,7 @@
 
 # Introduction - Description of the attack
 
-In this demo, I demonstrate a stack-based buffer overflow attack, also known as a stack smashing attack. My goal was to overflow the buffer and overwrite the return address on the stack so that, when the vulnerable function returned, the execution would jump to my injected shellcode. The shellcode was designed to launch a shell (/bin/sh). If successful, this would give me arbitrary command execution from within the vulnerable program, simulating how attackers exploit memory vulnerabilities to gain control over a system. I wrote a simple C program containing a function that defines a fixed-size buffer on the stack. This function uses the unsafe gets() function to read user input, which doesn’t perform any bounds checking. As a result, when I supplied more input than the buffer can hold, I was able to overwrite adjacent memory on the stack—including the saved return address of the function.
+In this demo, I demonstrate a stack-based attack known as stack smashing. My goal was to overflow the buffer and overwrite the return address on the stack so that, when the vulnerable function returned, the execution would jump to my injected shellcode. The shellcode was designed to launch a shell (/bin/sh). If successful, this would give me arbitrary command execution from within the vulnerable program, simulating how attackers exploit memory vulnerabilities to gain control over a system. I generated a simple C program containing a function that defines a fixed-size buffer on the stack. This function uses the unsafe gets() function to read user input, which doesn’t perform any bounds checking. As a result, when I supplied more input than the buffer can hold, I was able to overwrite adjacent memory on the stack, including the saved return address of the function.
 
 However, the exploit was not successful. Despite trying multiple payload offsets and carefully analyzing the stack, I was not able to reliably determine the exact memory address to overwrite the return address with. The program consistently crashed due to segmentation faults, likely because of inaccurate address targeting. 
 
@@ -93,7 +93,7 @@ Once the program hit the breakpoint, I used the following command to inspect the
 
 ![gdbImage](images/gdbpic.png)
 
-This allowed me to identify where the return address was located in relation to the buffer. From this, I calculated how many bytes I needed to overflow the buffer and reach the return address. This offset was found to be 76 bytes in my case. I used 76 bytes in total because the buffer was 64 bytes, plus 4 bytes for the saved base pointer (EBP), and 4 bytes to overwrite the return address, with an extra 4 bytes as padding to ensure proper alignment—making it a total of 76 bytes.
+This allowed me to identify where the return address was located in relation to the buffer. From this, I calculated how many bytes I needed to overflow the buffer and reach the return address. This offset was found to be 76 bytes in my case. I used 76 bytes in total because the buffer was 64 bytes, plus 4 bytes for the saved base pointer (EBP), and 4 bytes to overwrite the return address, with an extra 4 bytes as padding to ensure proper alignment, making it a total of 76 bytes.
 
 The goal was to overwrite the return address with the address pointing to the start of my shellcode in the stack. I approximated this address based on the output of info registers esp, often slightly increasing it to point just past the NOP sled and into the shellcode.
 
