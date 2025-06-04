@@ -1,6 +1,6 @@
-# Stack Smashing Attack: Exploiting Buffer Overflow to Execute Arbitrary Shellcode
+# **Stack Smashing Attack: Exploiting Buffer Overflow to Execute Arbitrary Shellcode**
 
-![Stock Photo](images/Hacker2.png)
+<img src="images/Hacker2.png" width= "100%" height="700vh" />
 
 # Introduction - Description of the attack
 
