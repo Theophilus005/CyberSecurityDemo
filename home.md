@@ -1,6 +1,7 @@
 # **Stack Smashing Attack: Exploiting Buffer Overflow to Execute Arbitrary Shellcode**
 
 ![IntroImage](images/introimage.jpg)
+<div style="margin-bottom: 20px"></div>
 
 # Introduction - Description of the attack
 
