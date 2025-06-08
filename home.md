@@ -172,6 +172,7 @@ ___
 
 ## Acknowledgement 
 ChatGPT was used to obtain step-by-step procedures, technical explanations, and code examples relevant to buffer overflow exploitation.
+___
 
 ## References
 1. Alouneh, S., Kharbutli, M., & AlQurem, R. (2013). Stack Memory Buffer Overflow Protection based on Duplication and Randomization. Procedia Computer Science, 21, 250–256. https://doi.org/10.1016/j.procs.2013.09.033
