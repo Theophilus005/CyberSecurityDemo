@@ -2,7 +2,7 @@
 
 <div style="margin-bottom: 20px"></div>
 
-![IntroImage](images/design.png)
+![IntroImage](images/design2.png)
 
 # Introduction - Description of the attack
 
@@ -180,4 +180,4 @@ ChatGPT was used to obtain step-by-step procedures, technical explanations, and 
 
 3. GDB: The GNU Project Debugger. (n.d.). https://sourceware.org/gdb/
 
-4. \
+4. Madartzgraphics. (n.d.). Cyber crime cybercrime hacker - Free digitally-made illustrations on creazilla.com. Creazilla. https://creazilla.com/media/digital-illustration/1719960/cyber-crime-cybercrime-hacker
