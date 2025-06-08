@@ -2,7 +2,7 @@
 
 <div style="margin-bottom: 20px"></div>
 
-![IntroImage](images/introimage.jpg)
+![IntroImage](images/design.png)
 
 # Introduction - Description of the attack
 
