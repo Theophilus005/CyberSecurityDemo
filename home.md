@@ -6,7 +6,7 @@
 
 # Introduction - Description of the attack
 
-In this demo, I demonstrate a stack-based attack known as stack smashing. The main objective of the attacker is usually to change the control flow of the program, allowing the attacker to execute arbitrary code on the target system. My goal was to overflow the buffer and overwrite the return address on the stack so that, when the vulnerable function returned, the execution would jump to my injected shellcode. The shellcode was designed to launch a shell (/bin/sh). If successful, this would give me arbitrary command execution from within the vulnerable program, simulating how attackers exploit memory vulnerabilities to gain control over a system. I generated a simple C program containing a function that defines a fixed-size buffer on the stack. This function uses the unsafe gets() function to read user input, which doesn’t perform any bounds checking. As a result, when I supplied more input than the buffer can hold, I was able to overwrite adjacent memory on the stack, including the saved return address of the function.
+In this demo, I demonstrate a stack-based attack known as stack smashing. [1] The main objective of the attacker is usually to change the control flow of the program, allowing the attacker to execute arbitrary code on the target system. My goal was to overflow the buffer and overwrite the return address on the stack so that, when the vulnerable function returned, the execution would jump to my injected shellcode. The shellcode was designed to launch a shell (/bin/sh). If successful, this would give me arbitrary command execution from within the vulnerable program, simulating how attackers exploit memory vulnerabilities to gain control over a system. I generated a simple C program containing a function that defines a fixed-size buffer on the stack. This function uses the unsafe gets() function to read user input, which doesn’t perform any bounds checking. As a result, when I supplied more input than the buffer can hold, I was able to overwrite adjacent memory on the stack, including the saved return address of the function.
 
 However, the exploit was not successful. Despite trying multiple payload offsets and carefully analyzing the stack, I was not able to reliably determine the exact memory address to overwrite the return address with. The program consistently crashed due to segmentation faults, likely because of inaccurate address targeting. 
 
@@ -79,7 +79,7 @@ gcc -m32 -fno-stack-protector -z execstack -no-pie vuln.c -o vuln
 ___
 
 ## Step 3: Finding the Offset and ESP Location with GDB
-To understand the memory layout and determine where to inject my shellcode, I used GDB (GNU Debugger) to inspect the stack at runtime. The GDB, (GNU Debugger), allows you to see what is going on `inside' another program while it executes, or what another program was doing at the moment it crashed. 
+To understand the memory layout and determine where to inject my shellcode, I used GDB (GNU Debugger) to inspect the stack at runtime. [3] The GDB, (GNU Debugger), allows you to see what is going on `inside' another program while it executes, or what another program was doing at the moment it crashed. 
 
 I set a breakpoint at the gets() function, which is where the vulnerable buffer resides:
 ```
@@ -106,7 +106,7 @@ ___
 ## Step 4: Writing the Exploit Payload
 I generated a Python script (exploit.py) to generate a payload containing:
 
-A sequence of NOP (\x90) instructions and a shellcode to execute /bin/sh. A NOP (no-operation) sled is used as part of binary exploitation code to provide flexibility for exploitation accuracy and evade signatures before and after the exploitation has occurred and to transfer execution to the malicious code. The purpose of the NOP sled is to increase the chance of successful redirection so that if the return address lands anywhere in the NOP sled, the processor will “slide” down the NOPs until it reaches the shellcode.
+A sequence of NOP (\x90) instructions and a shellcode to execute /bin/sh. [2] A NOP (no-operation) sled is used as part of binary exploitation code to provide flexibility for exploitation accuracy and evade signatures before and after the exploitation has occurred and to transfer execution to the malicious code. The purpose of the NOP sled is to increase the chance of successful redirection so that if the return address lands anywhere in the NOP sled, the processor will “slide” down the NOPs until it reaches the shellcode.
 
 The payload is designed to fill the buffer with 76 bytes of padding ("A" * 76) to overwrite the saved return address with the address of the buffer where the shellcode is located.
 
